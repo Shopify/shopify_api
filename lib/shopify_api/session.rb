@@ -18,11 +18,12 @@ module ShopifyAPI
         params.each { |k,value| public_send("#{k}=", value) }
       end
 
-      def temp(domain, token, &block)
-        session = new(domain, token)
+      def temp(domain, token, extra = {}, &block)
+        session = new(domain, token, extra)
         original_site = ShopifyAPI::Base.site.to_s
         original_token = ShopifyAPI::Base.headers['X-Shopify-Access-Token']
-        original_session = new(original_site, original_token)
+        original_extra = ShopifyAPI::Base.extra
+        original_session = new(original_site, original_token, original_extra)
 
         begin
           ShopifyAPI::Base.activate_session(session)
