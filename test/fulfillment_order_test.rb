@@ -227,6 +227,57 @@ class FulFillmentOrderTest < Test::Unit::TestCase
       end
     end
 
+    context "#open" do
+      should "be able to open fulfillment order" do
+        fulfillment_order = ShopifyAPI::FulfillmentOrder.find(519788021)
+        fulfillment_order.status = 'scheduled'
+
+        opened = ActiveSupport::JSON.decode(load_fixture('fulfillment_order'))
+        opened['status'] = 'open'
+        body = {
+          fulfillment_order: opened,
+        }
+
+        fake(
+          'fulfillment_orders',
+          url: "#{@url_prefix}/fulfillment_orders/519788021/open.json",
+          method: :post,
+          body: ActiveSupport::JSON.encode(body)
+        )
+        assert(fulfillment_order.open)
+        assert_equal('open', fulfillment_order.status)
+      end
+    end
+
+    context "#reschedule" do
+      should "be able to rescheduled fulfillment order" do
+        fulfillment_order = ShopifyAPI::FulfillmentOrder.find(519788021)
+        fulfillment_order.status = 'scheduled'
+        new_fulfill_at = "2021-11-29"
+
+        rescheduled = ActiveSupport::JSON.decode(load_fixture('fulfillment_order'))
+        rescheduled['status'] = 'scheduled'
+        rescheduled['fulfill_at'] = new_fulfill_at
+        body = {
+          fulfillment_order: rescheduled,
+        }
+
+        request_body = { fulfillment_order: { new_fulfill_at: new_fulfill_at } }
+
+        fake(
+          'fulfillment_orders',
+          url: "#{@url_prefix}/fulfillment_orders/519788021/reschedule.json",
+          method: :post,
+          request_body: ActiveSupport::JSON.encode(request_body),
+          body: ActiveSupport::JSON.encode(body)
+        )
+
+        assert(fulfillment_order.reschedule(new_fulfill_at: new_fulfill_at))
+        assert_equal('scheduled', fulfillment_order.status)
+        assert_equal(new_fulfill_at, fulfillment_order.fulfill_at)
+      end
+    end
+
     context "#request_fulfillment" do
       should "make a fulfillment request for a fulfillment order including unsubmitted" do
         fake_original_fulfillment_order = ActiveSupport::JSON.decode(load_fixture('fulfillment_order'))
@@ -473,6 +524,36 @@ class FulFillmentOrderTest < Test::Unit::TestCase
         assert_equal(true, rejected)
         assert_equal('in_progress', fulfillment_order.status)
         assert_equal('cancellation_rejected', fulfillment_order.request_status)
+      end
+    end
+
+    context "#release_hold" do
+      should "require order_id" do
+        assert_raises(ArgumentError) do
+          ShopifyAPI::FulfillmentOrder.release_hold
+        end
+      end
+
+      should "throw exception if called for an unsupported version of the API" do
+        assert_raises(NotImplementedError) do
+          ShopifyAPI::FulfillmentOrder.release_hold(order_id: 450789469)
+        end
+      end
+
+      should "be able to release fulfillment hold on an order" do
+        url_prefix = url_prefix_for_activated_session_for('unstable')
+
+        fake(
+          'fulfillment_orders',
+          url: "#{url_prefix}/fulfillment_orders/release_hold.json",
+          method: :post,
+          request_body: ActiveSupport::JSON.encode({ :order_id => 450789469 }),
+          body: ActiveSupport::JSON.encode({})
+        )
+
+        response = ShopifyAPI::FulfillmentOrder.release_hold(order_id: 450789469)
+        assert_equal Net::HTTPOK, response.code_type
+        assert_equal "{}", response.body
       end
     end
   end

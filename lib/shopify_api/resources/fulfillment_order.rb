@@ -22,6 +22,13 @@ module ShopifyAPI
       end
     end
 
+    def self.release_hold(order_id:)
+      ShopifyAPI::Base.version_validation!('unstable')
+
+      body = { order_id: order_id }
+      post(:release_hold, {}, body.to_json)
+    end
+
     def fulfillments(options = {})
       fulfillment_hashes = get(:fulfillments, options)
       fulfillment_hashes.map { |fulfillment_hash| Fulfillment.new(fulfillment_hash) }
@@ -50,6 +57,19 @@ module ShopifyAPI
       keyed_fulfillment_orders = keyed_fulfillment_orders_from_response(post(:cancel, {}, only_id))
       load_keyed_fulfillment_order(keyed_fulfillment_orders, 'fulfillment_order')
       keyed_fulfillment_orders
+    end
+
+    def open
+      load_attributes_from_response(post(:open, {}, only_id))
+    end
+
+    def reschedule(new_fulfill_at:)
+      body = {
+        fulfillment_order: {
+          new_fulfill_at: new_fulfill_at,
+        },
+      }
+      load_attributes_from_response(post(:reschedule, {}, body.to_json))
     end
 
     def close(message: nil)
