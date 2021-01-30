@@ -31,6 +31,10 @@ module ShopifyAPI
       end
     end
 
+    def respond_to?(method_name, include_private = false)
+      !!attributes[method_name] || super
+    end
+
     class << self
       threadsafe_attribute(:_api_version)
       def headers
