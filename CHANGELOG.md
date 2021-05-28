@@ -15,6 +15,7 @@
 * [#818](https://github.com/Shopify/shopify_api/pull/818) Avoid depending on ActiveSupport in Sesssion class.
 
 * Freeze all string literals. This should have no impact unless your application is modifying ('monkeypatching') the internals of the library in an unusual way.
+* Fix the HTTP errors are processed when the response body is an array [#812](https://github.com/Shopify/shopify_api/pull/812)
 
 * [#802](https://github.com/Shopify/shopify_api/pull/802) Made `inventory_quantity` a read-only field in Variant
 
